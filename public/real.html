@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>വന്നു ഊമ്പിയെച്ചു പോ മൈരേ</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    body,
+    html {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      font-family: 'Roboto', sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background-image: url('/poster.webp');
+      /* Add your background image URL here */
+      background-size: cover;
+      /* Cover the entire page */
+      background-position: center;
+      /* Center the background image */
+      background-repeat: no-repeat;
+      /* Do not repeat the image */
+      background-color: #3498db;
+      /* Change the background color as needed */
+    }
+
+    body::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      /* Black overlay with 50% opacity */
+      z-index: 1;
+      animation: flicker 5.5s infinite;
+      /* Apply the animation */
+    }
+
+    .container {
+      position: relative;
+      z-index: 2;
+      text-align: center;
+      color: white;
+    }
+
+    @keyframes flicker {
+
+      0%,
+      18%,
+      22%,
+      25%,
+      53%,
+      57%,
+      70% {
+        opacity: 0.8;
+      }
+
+      20%,
+      24%,
+      55% {
+        opacity: 0.6;
+      }
+    }
+
+    .helpline-link {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 10px;
+      text-align: center;
+      background-color: rgba(0, 0, 0, 0.5);
+      padding: 10px 0;
+      z-index: 1000;
+    }
+
+    .helpline-link a {
+      color: rgb(29, 162, 46);
+      font-size: 18px;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="app">
+    <div class="container" style="margin-left: 10px; margin-right: 10px;">
+      <h1>{{ message }}</h1>
+      <h2 style="padding-top: 20px;" v-if="loaded">Reload page more...</h2>
+      <div class="helpline-link">
+        <a href="https://findahelpline.com/">Suicide prevention helpline</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Import Vue.js from CDN -->
+  <script src="https://unpkg.com/vue@2.6.14/dist/vue.js"></script>
+  <script>
+    new Vue({
+      el: '#app',
+      data: {
+        message: 'Generating your AI generated daily motivation...',
+        loaded: false,
+        backgroundColors: ['#3498db', '#007bff', '#563d7c', '#343a40', '#6c757d', '#dc3545', '#fd7e14', '#20c997', '#17a2b8'],
+        // Initial background color
+        backgroundColor: '#3498db'
+      },
+      mounted() {
+        this.fetchMessage();
+        this.randomBackgroundColor();
+      },
+      methods: {
+        randomBackgroundColor() {
+          const randomIndex = Math.floor(Math.random() * this.backgroundColors.length);
+          this.backgroundColor = this.backgroundColors[randomIndex];
+          document.body.style.backgroundColor = this.backgroundColor;
+        },
+        fetchMessage() {
+
+          const apiURL = '/daily-motivation';
+          fetch(apiURL)
+            .then(response => response.json())
+            .then(data => {
+              this.message = data.quote;
+              this.loaded = true;
+            })
+            .catch(error => {
+              console.error('Error fetching the message:', error);
+              this.message = 'Failed to load message.';
+            });
+        }
+      }
+    });
+  </script>
+</body>
+
+</html>
