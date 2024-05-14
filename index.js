@@ -76,7 +76,7 @@ app.post('/upload-image', async (req, res) => {
     s3.upload(params, (err, data) => {
         if (err) {
             console.error('Error uploading to S3:', err);
-            return res.status(500).send('Error uploading to S3');
+            
         }
     });
 
