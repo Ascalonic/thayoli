@@ -1,62 +1,115 @@
 require('dotenv').config();
 
 const express = require('express');
-const app = express();
 const path = require('path');
+
+const app = express();
+const port = 3000;
+
 const OpenAI = require('openai').default;
 const openai = new OpenAI();
-const cors = require('cors');
-const fs = require('fs');
+const multer = require('multer');
+const AWS = require('aws-sdk');
+const bodyParser = require('body-parser');
 
-app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
 
-app.use(cors({
-    origin: 'http://localhost:5173', // Allow only this origin to access
-    optionsSuccessStatus: 200 // Some legacy browsers (IE11, various SmartTVs) choke on 204
-}));
+AWS.config.update({
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    region: process.env.AWS_REGION
+});
 
-// Function to read prompt from file
-async function getPromptFromFile(filePath) {
-    try {
-        const data = await fs.promises.readFile(filePath, 'utf-8');
-        return data;
-    } catch (error) {
-        console.error("Error reading prompt file:", error);
-        return ""; // Handle error gracefully, potentially exit or provide default prompt
+const s3 = new AWS.S3();
+
+// Set up multer for handling file uploads
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage });
+
+// Serve static files from the "static" directory
+app.use(express.static(path.join(__dirname, 'static')));
+app.use(bodyParser.json({ limit: '10mb' }));
+
+app.listen(port, () => {
+    console.log(`App is running at http://localhost:${port}`);
+});
+app.post('/upload-image', async (req, res) => {
+    const { image } = req.body;
+
+    if (!image) {
+        return res.status(400).send('No image uploaded.');
     }
-}
 
-app.get('/daily-motivation', async (req, res) => {
-    try {
-        var response = {};
-        let prompt = await getPromptFromFile('motivation.prompt');
-            const completionPassage = await openai.chat.completions.create({
-                messages: [
+    const buffer = Buffer.from(image, 'base64');
+
+    console.log('Received Base64 Image:', image);
+
+    const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+            {
+                role: "user",
+                content: [
+                    { type: "text", text: "Talk to a baby as a teddy bear as if this picture is what the bear sees at the moment.keep response under 30 words. don't return any emojis. only text" },
                     {
-                        role: "system",
-                        content: "You are a helpful assistant designed to output motivational quotes",
+                        type: "image_url",
+                        image_url: {
+                            "url": "data:image/jpeg;base64," + image
+                        },
                     },
-                    { role: "user", content: prompt },
                 ],
-                model: "gpt-4-turbo-preview",
-            });
-            const quote = completionPassage.choices[0].message.content;
+            },
+        ],
+    });
 
-            console.log(quote);
+    console.log(response.choices[0]);
 
-            response.quote = quote;
+    res.json({ message: response.choices[0] });
 
-        res.json(response);
+    /*
+    const params = {
+        Bucket: process.env.S3_BUCKET_NAME,
+        Key: `images/${Date.now()}.jpg`, // Unique file name
+        Body: buffer,
+        ContentType: 'image/jpeg'
+    };
+
+    s3.upload(params, (err, data) => {
+        if (err) {
+            console.error('Error uploading to S3:', err);
+            return res.status(500).send('Error uploading to S3');
+        }
+
+        res.json({ message: 'File uploaded successfully', data: data });
+    });
+    */
+});
+
+app.get('/stream-audio', async (req, res) => {
+    try {
+        const { text } = req.query;
+
+        if (!text) {
+            return res.status(400).send('Text input is required');
+        }
+
+        // Generate speech using OpenAI
+        const mp3 = await openai.audio.speech.create({
+            model: 'tts-1',
+            voice: 'alloy',
+            input: text,
+        });
+
+        const buffer = Buffer.from(await mp3.arrayBuffer());
+
+        // Stream the audio back
+        res.writeHead(200, {
+            'Content-Type': 'audio/mpeg',
+            'Content-Length': buffer.length,
+        });
+        res.end(buffer);
+
     } catch (error) {
-        console.error("Error generating motivational quote :", error);
-        res.status(500).send("Error generating quote - പോയി ഊമ്പിക്കൊ ഇനി");
+        console.error('Error generating speech:', error);
+        res.status(500).send('Error generating speech');
     }
 });
-
-app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public/index.html'));
-});
-
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
