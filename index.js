@@ -69,7 +69,8 @@ app.post('/upload-image', async (req, res) => {
         Bucket: process.env.S3_BUCKET_NAME,
         Key: `images/${Date.now()}.jpg`, // Unique file name
         Body: buffer,
-        ContentType: 'image/jpeg'
+        ContentType: 'image/jpeg',
+        ACL: 'public-read', // Optional: make the file publicly readable
     };
 
     s3.upload(params, (err, data) => {
