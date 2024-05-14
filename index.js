@@ -49,7 +49,7 @@ app.post('/upload-image', async (req, res) => {
             {
                 role: "user",
                 content: [
-                    { type: "text", text: "Talk to a baby as a teddy bear as if this picture is what the bear sees at the moment.keep response under 30 words. don't return any emojis. only text" },
+                    { type: "text", text: "Talk to a baby as a teddy bear as if this picture is what the bear sees at the moment. if the picture has some person holding something, tell the baby what that object is. Maybe spell the object so that the baby can learn. maybe tell what color the object is. if the picture has some dangerous items involved, warn the baby. keep response under 30 words. don't return any emojis. only text" },
                     {
                         type: "image_url",
                         image_url: {
