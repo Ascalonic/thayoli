@@ -65,7 +65,6 @@ app.post('/upload-image', async (req, res) => {
 
     res.json({ message: response.choices[0] });
 
-    /*
     const params = {
         Bucket: process.env.S3_BUCKET_NAME,
         Key: `images/${Date.now()}.jpg`, // Unique file name
@@ -78,10 +77,8 @@ app.post('/upload-image', async (req, res) => {
             console.error('Error uploading to S3:', err);
             return res.status(500).send('Error uploading to S3');
         }
-
-        res.json({ message: 'File uploaded successfully', data: data });
     });
-    */
+
 });
 
 app.get('/stream-audio', async (req, res) => {
